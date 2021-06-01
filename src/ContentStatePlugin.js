@@ -1,23 +1,19 @@
 import React from 'react';
 import { createSelector } from 'reselect';
-import mirador from 'mirador';
 
 import ActionTypes from 'mirador/dist/es/src/state/actions/action-types';
-import { getWindow, getManifest } from 'mirador/dist/es/src/state/selectors/getters';
-import { receiveAnnotation, receiveManifest, updateViewport } from 'mirador/dist/es/src/state/actions';
+import { getWindow } from 'mirador/dist/es/src/state/selectors/getters';
+import { receiveAnnotation, updateViewport } from 'mirador/dist/es/src/state/actions';
 import { getCompanionWindowsForContent } from 'mirador/dist/es/src/state/selectors';
-import { updateWindow, updateCompanionWindow, addWindow } from 'mirador/dist/es/src/state/actions';
+import { updateCompanionWindow, addWindow } from 'mirador/dist/es/src/state/actions';
 
 import omit from 'lodash/omit';
 import set from 'lodash/fp/set';
 import update from 'lodash/fp/update';
 
-import fetch from 'isomorphic-unfetch';
-
 import { resolveContentState } from './contentState'; 
 
-import { call, put, takeEvery, takeLatest, select, all } from 'redux-saga/effects'
-import { Select } from '@material-ui/core';
+import { call, put, takeEvery, select, all } from 'redux-saga/effects'
 
 const ContentStateComponent = ({ TargetComponent, targetProps  }) => (
   <TargetComponent {...targetProps} />

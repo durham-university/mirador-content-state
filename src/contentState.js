@@ -1,3 +1,5 @@
+import fetch from 'isomorphic-unfetch';
+
 export function contentStateFromLocation() {
     var result = new RegExp("iiif-content=([^&]*)", "i").exec(window.location.search);
     if(!result) return undefined;
