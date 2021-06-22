@@ -73,17 +73,19 @@ const contentStateSaga = function*(){
     takeEvery(ActionTypes.IMPORT_CONFIG, function*(action){
       if(action.config.contentState) {
         const contentState = yield call(resolveContentState, action.config.contentState);
-        yield put(addContentState(contentState));
+        if(contentState) {
+          yield put(addContentState(contentState));
 
-        for(var i=0;i<contentState.targets.length;i++){
-          const target = contentState.targets[i];
-          yield put(addWindow({view: "single", manifestId: target.manifest, canvasId: target.canvas, selectedAnnotationId: target.annotation, contentStateId: contentState.id, contentStateIndex: i}) );
-          const windowId = yield select(contentStateWindowIdSelector, { contentStateId: contentState.id, contentStateIndex: i });
+          for(var i=0;i<contentState.targets.length;i++){
+            const target = contentState.targets[i];
+            yield put(addWindow({view: "single", manifestId: target.manifest, canvasId: target.canvas, selectedAnnotationId: target.annotation, contentStateId: contentState.id, contentStateIndex: i}) );
+            const windowId = yield select(contentStateWindowIdSelector, { contentStateId: contentState.id, contentStateIndex: i });
 
-          if(target.annotationBox) {
-            const companionWindows = yield select(getCompanionWindowsForContent, { windowId, content: "info" });
-            for(var companionWindow of companionWindows) {
-              yield put(updateCompanionWindow(windowId, companionWindow.id, { content: "annotations" }));
+            if(target.annotationBox) {
+              const companionWindows = yield select(getCompanionWindowsForContent, { windowId, content: "info" });
+              for(var companionWindow of companionWindows) {
+                yield put(updateCompanionWindow(windowId, companionWindow.id, { content: "annotations" }));
+              }
             }
           }
         }
@@ -91,7 +93,7 @@ const contentStateSaga = function*(){
     } ),
     takeEvery(ActionTypes.REQUEST_CANVAS_ANNOTATIONS, function*( { canvasId, windowId } ){
       const contentState = yield select(windowContentStateSelector, { windowId })
-      if(!contentState) return;
+      if(!contentState || !contentState.contentState) return;
       const target = contentState.contentState.targets[contentState.targetIndex];
 
       if(target.canvas == canvasId) {
@@ -101,6 +103,7 @@ const contentStateSaga = function*(){
 
         const box = target.annotationBox;
         if(box) {
+/*        // TODO: getElementById doesn't really work properly in React  
           const window = document.getElementById(windowId);
           var zoom = 1.0;
           if(window.clientWidth/window.clientHeight > box.w/box.h)
@@ -112,7 +115,7 @@ const contentStateSaga = function*(){
             x: box.x + box.w / 2.0,
             y: box.y + box.h / 2.0,
             zoom: zoom
-          }));
+          }));*/
         }
       }
     } )

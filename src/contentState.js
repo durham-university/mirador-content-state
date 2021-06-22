@@ -23,25 +23,26 @@ export async function resolveContentState(contentState) {
             // Apply url safe base64 replacement, see https://tools.ietf.org/html/rfc4648#section-5
             // this will still work with normal base64. Also remove whitespace. atob can handle whitespace
             // but it would interfere with fixing padding on next line.
-            s = s.replace(/-/g,"+").replace(/_/g,"/").replace(/\s/g,'');
+            s = s.replaceAll('-','+').replaceAll('_','/').replace(/\s/g,'');
             while((s.length)%4 != 0) s=s+"="; // add padding if it is missing, as it will be with url safe base64
-            s = atob(s);
-            s = decodeURIComponent(escape(s)); // this effectively goes from UTF8 to javascript string
-            contentState = s;
+            contentState = JSON.parse(decodeURI(atob(s)));
         }
     }
-    if(!contentState) return Promise.reject({ error: "Unable to parse content state"})
+    if(!contentState) return Promise.resolve(undefined);
     else return Promise.resolve({id: contentState.id, targets: getContentStateTargets(contentState), json: contentState});
 }
 
 export function getContentStateTargets(json, base={}){
     if(!json) return [base];
-    switch(json.type) {
+    switch(json.type || json['@type']) {
         case 'Manifest':
-            return [{...base, manifest: json.id}];
+        case 'sc:Manifest':
+            return [{...base, manifest: json.id || json['@id']}];
         case 'Canvas':
-            if(!json.id) return [];
-            var s = json.id.split("#");
+        case 'sc:Canvas':
+            const jsonid = json.id || json['@id'];
+            if(!jsonid) return [];
+            var s = jsonid.split("#");
             if(s.length > 1) {
                 base = {...base, canvas: s[0] };
                 var m = s[1].match(/xywh=(\d+),(\d+),(\d+),(\d+)/);
@@ -55,7 +56,7 @@ export function getContentStateTargets(json, base={}){
                             "@id": annotationId,
                             "@type": "oa:Annotation",
                             "motivation": "oa:commenting",
-                            "on": json.id,
+                            "on": jsonid,
                             "resource": {
                                 "@type": "cnt:ContentAsText",
                                 "chars": "Link target",
@@ -65,10 +66,11 @@ export function getContentStateTargets(json, base={}){
                     }, annotation: annotationId, annotationBox: {x: parseInt(m[1]), y: parseInt(m[2]), w: parseInt(m[3]), h: parseInt(m[4])} };
                 } 
             }
-            else base = {...base, canvas: json.id};
+            else base = {...base, canvas: jsonid};
 
             return getContentStateTargets(json.partOf || json.within, base)
         case 'Annotation':
+        case 'oa:Annotation':
             if(json.motivation && (json.motivation.includes("highlighting") || json.motivation.includes("contentState")) ){
                 if(json.resource && json.resource.chars) base = {...base, annotationResource: json.resource};
 
